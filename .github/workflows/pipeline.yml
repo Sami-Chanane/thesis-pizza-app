@@ -23,7 +23,7 @@ jobs:
       continue-on-error: true      # continue pipeline execution even if issues were found
       uses: super-linter/super-linter@v5.7.2
       env:
-        DEFAULT_BRANCH: main
+        DEFAULT_BRANCH: master
         VALIDATE_ALL_CODEBASE: false  # to lint only the new code
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
     - name: Trivy Security Scan for the Repo
@@ -32,13 +32,8 @@ jobs:
       with:
         scan-type: 'fs'
         ignore-unfixed: true
-        format: 'sarif'
-        output: 'trivy-results-${{ env.IMAGE_TAG }}-repo.sarif'
+        format: 'table'
         severity: 'HIGH,CRITICAL'
-    - name: Upload Trivy Scan Results to GitHub Security Tab
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results-${{ env.IMAGE_TAG }}-repo.sarif'
     - name: Test Application
       uses: docker/build-push-action@v5
       with:
