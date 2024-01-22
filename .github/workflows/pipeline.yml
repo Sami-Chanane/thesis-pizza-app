@@ -24,7 +24,7 @@ jobs:
       uses: super-linter/super-linter@v5.7.2
       env:
         DEFAULT_BRANCH: master
-        VALIDATE_ALL_CODEBASE: true  # to lint only the new code
+        VALIDATE_ALL_CODEBASE: false  # to lint only the new code
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
     - name: Trivy Security Scan for the Repo
       continue-on-error: true      # continue pipeline execution even if issues were found
@@ -33,19 +33,14 @@ jobs:
         scan-type: 'fs'
         ignore-unfixed: true
         format: 'table'
+        output: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.txt'
         severity: 'HIGH,CRITICAL'
     - name: Set up QEMU     # necessary for multi-arch builds
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx      # necessary for multi-arch builds
       uses: docker/setup-buildx-action@v3
-    - name: Test Application
-      run: docker buildx build --tag pizza-app --target test-report --output type=local,dest=$(pwd) .
-      # uses: docker/build-push-action@v5
-      # with:
-      #   push: false
-      #   target: test-report
-      #   outputs: type=local,dest=$(pwd)
-      #   tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test   # tag does not matter because the image will be deleted when job in completed
+    - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
+      run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
     - name: list current directory files
       run: ls -alh
     - name: Upload Test Reports
@@ -63,28 +58,17 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Application Image
       run: docker buildx build --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+    - name: Push Image to ${{ env.REGISTERY }}
+      run: docker push ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
     - name: Trivy Security Scan for the Image
       continue-on-error: true      # continue pipeline execution even if issues were found
       uses: aquasecurity/trivy-action@master
       with: 
         image-ref: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         ignore-unfixed: true
-        format: 'sarif'
-        output: 'trivy-results-${{ env.IMAGE_TAG }}-image.sarif'
+        format: 'table'
+        output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.txt'
         severity: 'HIGH,CRITICAL'
-    - name: Upload Trivy Scan Results to GitHub Security Tab
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results-${{ env.IMAGE_TAG }}-image.sarif'
-    - name: Push Image to ${{ env.REGISTERY }}
-      run: docker push ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-    # - name: Build Application Image and Push it to GHCR
-    #   uses: docker/build-push-action@v5
-    #   with:
-    #     push: true
-    #     target: final-stage
-    #     platforms: linux/amd64,linux/arm64,linux/arm/v7
-    #     tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
 
 
