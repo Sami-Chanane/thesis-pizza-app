@@ -47,7 +47,7 @@ jobs:
         outputs: type=local,dest=$(pwd)
         tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test   # tag does not matter because the image will be deleted when job in completed
     - name: Upload Test Reports
-      uses: actions/artifact-upload@v3
+      uses: actions/upload-artifact@v3
       with:
         name: test-report-${{ env.IMAGE_TAG }}
         path: |
