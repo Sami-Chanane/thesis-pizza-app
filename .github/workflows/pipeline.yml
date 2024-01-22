@@ -5,7 +5,7 @@ on:
     branches:
     - master
 env:
-  REGISTERY: "https://ghcr.io"
+  REGISTERY: "ghcr.io"
   IMAGE_NAME: "${{ github.actor }}/pizza-website"
   IMAGE_TAG: ${{ github.run_number }}
 jobs:
@@ -24,7 +24,7 @@ jobs:
       uses: super-linter/super-linter@v5.7.2
       env:
         DEFAULT_BRANCH: master
-        VALIDATE_ALL_CODEBASE: false  # to lint only the new code
+        VALIDATE_ALL_CODEBASE: true  # to lint only the new code
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
     - name: Trivy Security Scan for the Repo
       continue-on-error: true      # continue pipeline execution even if issues were found
