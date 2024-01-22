@@ -6,8 +6,7 @@ on:
     - master
 env:
   REGISTERY: "https://ghcr.io"
-  APP_NAME: "pizza-website"
-  IMAGE_NAME: "${{ github.actor }}/${{ env.APP_NAME }}"
+  IMAGE_NAME: "${{ github.actor }}/pizza-website"
   IMAGE_TAG: ${{ github.run_number }}
 jobs:
   integration:
