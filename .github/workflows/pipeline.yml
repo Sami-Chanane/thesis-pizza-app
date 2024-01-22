@@ -35,12 +35,17 @@ jobs:
         format: 'table'
         output: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.txt'
         severity: 'HIGH,CRITICAL'
+    - name: Upload Trivy Repo Scan
+      uses: actions/upload-artifact@v3
+      with:
+        name: trivy-scan-${{ env.IMAGE_TAG }}-repo
+        path: trivy-scan-${{ env.IMAGE_TAG }}-repo.txt
     - name: Set up QEMU     # necessary for multi-arch builds
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx      # necessary for multi-arch builds
       uses: docker/setup-buildx-action@v3
     - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
-      run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
+      run: docker buildx build --tag ${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
     - name: list current directory files
       run: ls -alh
     - name: Upload Test Reports
@@ -57,9 +62,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Application Image
-      run: docker buildx build --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+      run: docker buildx build --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
     - name: Push Image to ${{ env.REGISTERY }}
-      run: docker push ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      run: docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
     - name: Trivy Security Scan for the Image
       continue-on-error: true      # continue pipeline execution even if issues were found
       uses: aquasecurity/trivy-action@master
@@ -69,6 +74,11 @@ jobs:
         format: 'table'
         output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.txt'
         severity: 'HIGH,CRITICAL'
+    - name: Upload Trivy Image Scan
+      uses: actions/upload-artifact@v3
+      with:
+        name: trivy-scan-${{ env.IMAGE_TAG }}-image
+        path: trivy-scan-${{ env.IMAGE_TAG }}-image.txt
 
 
 
