@@ -74,7 +74,7 @@ jobs:
         image-ref: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         ignore-unfixed: true
         format: 'sarif'
-        output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.txt'
+        output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
         severity: 'HIGH,CRITICAL'
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v2
