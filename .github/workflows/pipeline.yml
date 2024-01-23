@@ -86,22 +86,18 @@ jobs:
       uses: sigstore/cosign-installer@v3.3.0
       with:
         cosign-release: 'v2.2.2'
-
-    #
-    #
-    #
     - name: Sign Image with Cosign
       env:
-        COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      run: cosign sign --key ${{ env.COSIGN_KEY }} ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
     - name: Verify that the Image has been signed Successfully
       env:
-        COSIGN_PUB: ${{ secrets.COSIGN_PUB }}
+        COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
       run: |
         docker buildx imagetools inspect ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         docker pull ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-        cosign verify --key ${{ env.COSIGN_PUB }} ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
 
 
