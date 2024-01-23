@@ -40,6 +40,7 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
+        category: trivy-repo-scan
     - name: Set up QEMU     # necessary for multi-arch builds
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx      # necessary for multi-arch builds
@@ -80,6 +81,7 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
+        category: trivy-image-scan
     - name: Install Cosign
       uses: sigstore/cosign-installer@v3.3.0
       with:
