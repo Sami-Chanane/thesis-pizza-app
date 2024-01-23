@@ -59,18 +59,18 @@ jobs:
         registry: ${{ env.REGISTERY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build Application Image
-      run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 .
-      #
-      #
-      #
-    - name: CHECK IMAGES
-      run: docker image ls
-      #
-      #
-      #
-    - name: Push Image to ${{ env.REGISTERY }}
-      run: docker push ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    - name: Build and Push to ${{ env.REGISTERY }}
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        target: "final-stage"
+        platforms: linux/amd64,linux/arm64,linux/arm/v7
+        tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    # - name: Build Application Image
+    #   run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 .
+    # - name: Push Image to ${{ env.REGISTERY }}
+    #   run: docker push ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
     - name: Trivy Security Scan for the Image
       continue-on-error: true      # continue pipeline execution even if issues were found
       uses: aquasecurity/trivy-action@master
