@@ -42,7 +42,7 @@ jobs:
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
     # - name: Upload Trivy Repo Scan
     #   uses: actions/upload-artifact@v3
     #   with:
