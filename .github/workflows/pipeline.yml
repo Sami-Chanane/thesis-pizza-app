@@ -97,8 +97,9 @@ jobs:
       env:
         COSIGN_PUB: ${{ secrets.COSIGN_PUB }}
       run: |
+        docker buildx imagetools inspect ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         docker pull ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-        cosign verify --pub ${{ env.COSIGN_PUB }} ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        cosign verify --key ${{ env.COSIGN_PUB }} ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
 
 
