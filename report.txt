@@ -1,0 +1,13 @@
+=== RUN   TestHome
+--- PASS: TestHome (0.00s)
+=== RUN   TestAbout
+--- PASS: TestAbout (0.00s)
+=== RUN   TestMenu
+--- PASS: TestMenu (0.00s)
+=== RUN   TestGallery
+--- PASS: TestGallery (0.00s)
+=== RUN   TestContact
+--- PASS: TestContact (0.00s)
+PASS
+coverage: 12.9% of statements
+ok  	pizza-app	0.006s	coverage: 12.9% of statements

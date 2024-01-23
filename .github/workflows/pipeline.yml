@@ -45,7 +45,7 @@ jobs:
     - name: Set up Docker Buildx      # necessary for multi-arch builds
       uses: docker/setup-buildx-action@v3
     - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
-      run: docker buildx build --tag ${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
+      run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
     - name: Upload Test Reports
       uses: actions/upload-artifact@v3
       with:
@@ -60,7 +60,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Application Image
-      run: docker buildx build --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+      run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --target final-stage --platform linux/amd64,linux/arm64,linux/arm/v7 .
       #
       #
       #
