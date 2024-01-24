@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Docker Buildx      # necessary for multi-arch builds
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
         run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
