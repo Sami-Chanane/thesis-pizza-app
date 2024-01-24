@@ -1,103 +1,239 @@
-# name: PIPELINE
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches:
-#     - master
-# env:
-#   REGISTERY: "ghcr.io"
-#   IMAGE_NAME: "${{ github.actor }}/pizza-website"
-#   IMAGE_TAG: ${{ github.run_number }}
-# jobs:
-#   CI:
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
-#       security-events: write  # to upload sarif files
-#     steps:
-#     - name: Get Code from Repository
-#       uses: actions/checkout@v4
-#       with:
-#         fetch-depth: 0
-#     - name: Lint Code
-#       continue-on-error: true      # continue pipeline execution even if issues were found
-#       uses: super-linter/super-linter@v5.7.2
-#       env:
-#         DEFAULT_BRANCH: master
-#         VALIDATE_ALL_CODEBASE: false  # to lint only the new code
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
-#     - name: Trivy Security Scan for the Repo
-#       continue-on-error: true      # continue pipeline execution even if issues were found
-#       uses: aquasecurity/trivy-action@master
-#       with:
-#         scan-type: 'fs'
-#         ignore-unfixed: true
-#         format: 'sarif'
-#         output: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
-#         severity: 'HIGH,CRITICAL'
-#     - name: Upload Trivy scan results to GitHub Security tab
-#       uses: github/codeql-action/upload-sarif@v2
-#       with:
-#         sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
-#         category: trivy-repo-scan
-#     - name: Set up QEMU     # necessary for multi-arch builds
-#       uses: docker/setup-qemu-action@v3
-#     - name: Set up Docker Buildx      # necessary for multi-arch builds
-#       uses: docker/setup-buildx-action@v3
-#     - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
-#       run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
-#     - name: Upload Test Reports
-#       uses: actions/upload-artifact@v3
-#       with:
-#         name: test-report-${{ env.IMAGE_TAG }}
-#         path: |
-#           coverage.out
-#           report.txt
-#     - name: Login to GitHub Container Registery
-#       uses: docker/login-action@v3
-#       with:
-#         registry: ${{ env.REGISTERY }}
-#         username: ${{ github.actor }}
-#         password: ${{ secrets.GITHUB_TOKEN }}
-#     - name: Build and Push to ${{ env.REGISTERY }}
-#       uses: docker/build-push-action@v5
-#       with:
-#         context: .
-#         push: true
-#         target: "final-stage"
-#         platforms: linux/amd64,linux/arm64,linux/arm/v7
-#         tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#     - name: Trivy Security Scan for the Image
-#       continue-on-error: true      # continue pipeline execution even if issues were found
-#       uses: aquasecurity/trivy-action@master
-#       with: 
-#         image-ref: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#         ignore-unfixed: true
-#         format: 'sarif'
-#         output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
-#         severity: 'HIGH,CRITICAL'
-#     - name: Upload Trivy scan results to GitHub Security tab
-#       uses: github/codeql-action/upload-sarif@v2
-#       with:
-#         sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
-#         category: trivy-image-scan
-#     - name: Install Cosign
-#       uses: sigstore/cosign-installer@v3.3.0
-#       with:
-#         cosign-release: 'v2.2.2'
-#     - name: Sign Image with Cosign
-#       env:
-#         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-#         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-#       run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#     - name: Verify that the Image has been signed Successfully
-#       env:
-#         COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
-#       run: |
-#         docker buildx imagetools inspect ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#         docker pull ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-#         cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+name: PIPELINE
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - master
+env:
+  REGISTERY: "ghcr.io"
+  IMAGE_NAME: "${{ github.actor }}/pizza-website"
+  IMAGE_TAG: ${{ github.run_number }}
+jobs:
+
+  Lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Get Code from Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Lint Code
+        continue-on-error: true      # continue pipeline execution even if issues were found
+        uses: super-linter/super-linter@v5.7.2
+        env:
+          DEFAULT_BRANCH: master
+          VALIDATE_ALL_CODEBASE: false  # to lint only the new code
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
+  Repo-Scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # to upload sarif files
+    steps:
+      - name: Get Code from Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Trivy Security Scan for the Repo
+        continue-on-error: true      # continue pipeline execution even if issues were found
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
+          severity: 'HIGH,CRITICAL'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
+          category: trivy-repo-scan
+  Unit-Tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Get Code from Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Docker Buildx      # necessary for multi-arch builds
+        uses: docker/setup-buildx-action@v3
+      - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
+        run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report-${{ env.IMAGE_TAG }}
+          path: |
+            coverage.out
+            report.txt
+  Build-Push-Image:
+    needs: [Lint, Repo-Scan, Unit-Tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Get Code from Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU     # necessary for multi-arch builds
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx      # necessary for multi-arch builds
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registery
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTERY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push to ${{ env.REGISTERY }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          target: "final-stage"
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  Image-Scan:
+    needs: [Build-Push-Image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # to upload sarif files
+    steps:
+    - name: Trivy Security Scan for the Image
+      continue-on-error: true      # continue pipeline execution even if issues were found
+      uses: aquasecurity/trivy-action@master
+      with: 
+        image-ref: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        ignore-unfixed: true
+        format: 'sarif'
+        output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
+        severity: 'HIGH,CRITICAL'
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
+        category: trivy-image-scan
+  Sign-Image:
+    needs: [Image-Scan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@v3.3.0
+      with:
+        cosign-release: 'v2.2.2'
+    - name: Sign Image with Cosign
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    - name: Verify that the Image has been signed Successfully
+      env:
+        COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+      run: |
+        docker buildx imagetools inspect ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        docker pull ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+
+
+  # CI:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     packages: write
+  #     security-events: write  # to upload sarif files
+  #   steps:
+  #   - name: Get Code from Repository
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   - name: Lint Code
+  #     continue-on-error: true      # continue pipeline execution even if issues were found
+  #     uses: super-linter/super-linter@v5.7.2
+  #     env:
+  #       DEFAULT_BRANCH: master
+  #       VALIDATE_ALL_CODEBASE: false  # to lint only the new code
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # To report GitHub Actions status checks
+  #   - name: Trivy Security Scan for the Repo
+  #     continue-on-error: true      # continue pipeline execution even if issues were found
+  #     uses: aquasecurity/trivy-action@master
+  #     with:
+  #       scan-type: 'fs'
+  #       ignore-unfixed: true
+  #       format: 'sarif'
+  #       output: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
+  #       severity: 'HIGH,CRITICAL'
+  #   - name: Upload Trivy scan results to GitHub Security tab
+  #     uses: github/codeql-action/upload-sarif@v2
+  #     with:
+  #       sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-repo.sarif'
+  #       category: trivy-repo-scan
+  #   - name: Set up QEMU     # necessary for multi-arch builds
+  #     uses: docker/setup-qemu-action@v3
+  #   - name: Set up Docker Buildx      # necessary for multi-arch builds
+  #     uses: docker/setup-buildx-action@v3
+  #   - name: Test Application    # image tag does not matter because the image will be deleted when job in completed
+  #     run: docker buildx build --tag ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:test --target test-report --output type=local,dest=$(pwd) .
+  #   - name: Upload Test Reports
+  #     uses: actions/upload-artifact@v3
+  #     with:
+  #       name: test-report-${{ env.IMAGE_TAG }}
+  #       path: |
+  #         coverage.out
+  #         report.txt
+  #   - name: Login to GitHub Container Registery
+  #     uses: docker/login-action@v3
+  #     with:
+  #       registry: ${{ env.REGISTERY }}
+  #       username: ${{ github.actor }}
+  #       password: ${{ secrets.GITHUB_TOKEN }}
+  #   - name: Build and Push to ${{ env.REGISTERY }}
+  #     uses: docker/build-push-action@v5
+  #     with:
+  #       context: .
+  #       push: true
+  #       target: "final-stage"
+  #       platforms: linux/amd64,linux/arm64,linux/arm/v7
+  #       tags: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #   - name: Trivy Security Scan for the Image
+  #     continue-on-error: true      # continue pipeline execution even if issues were found
+  #     uses: aquasecurity/trivy-action@master
+  #     with: 
+  #       image-ref: ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #       ignore-unfixed: true
+  #       format: 'sarif'
+  #       output: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
+  #       severity: 'HIGH,CRITICAL'
+  #   - name: Upload Trivy scan results to GitHub Security tab
+  #     uses: github/codeql-action/upload-sarif@v2
+  #     with:
+  #       sarif_file: 'trivy-scan-${{ env.IMAGE_TAG }}-image.sarif'
+  #       category: trivy-image-scan
+  #   - name: Install Cosign
+  #     uses: sigstore/cosign-installer@v3.3.0
+  #     with:
+  #       cosign-release: 'v2.2.2'
+  #   - name: Sign Image with Cosign
+  #     env:
+  #       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+  #       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+  #     run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #   - name: Verify that the Image has been signed Successfully
+  #     env:
+  #       COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+  #     run: |
+  #       docker buildx imagetools inspect ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #       docker pull ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #       cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.REGISTERY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
 
 
