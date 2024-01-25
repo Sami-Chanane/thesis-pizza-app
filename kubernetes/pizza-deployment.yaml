@@ -7,7 +7,7 @@ metadata:
 spec:
   replicas: 6
   selector:
-    matchLabel:
+    matchLabels:
       app: pizza
   template:
     metadata:
