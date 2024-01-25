@@ -2,3 +2,4 @@ cosign.pub
 pre-commit
 report.txt
 coverage.out
+kubernetes/pizza-service.yaml
