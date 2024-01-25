@@ -160,7 +160,7 @@ jobs:
   #       cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
   
   Deploy-Image:
-    needs: [Sign-Image]
+    # needs: [Sign-Image]
     runs-on: ubuntu-latest
     permissions:
       contents: read
