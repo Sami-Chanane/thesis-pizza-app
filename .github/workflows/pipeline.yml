@@ -131,42 +131,48 @@ jobs:
   #       category: trivy-image-scan
 
   # Sign-Image:
-  #   needs: [Image-Scan]
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     packages: write
-  #   steps:
-  #   - name: Login to GitHub Container Registery
-  #     uses: docker/login-action@v3
-  #     with:
-  #       registry: ${{ env.IMAGE_REGISTERY }}
-  #       username: ${{ github.actor }}
-  #       password: ${{ secrets.GITHUB_TOKEN }}
-  #   - name: Install Cosign
-  #     uses: sigstore/cosign-installer@v3.3.0
-  #     with:
-  #       cosign-release: 'v2.2.2'
-  #   - name: Sign Image with Cosign
-  #     env:
-  #       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-  #       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-  #     run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-  #   - name: Verify that the Image has been signed Successfully
-  #     env:
-  #       COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
-  #     run: |
-  #       docker buildx imagetools inspect ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-  #       docker pull ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-  #       cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #   #
+  #   #
+  #   #
+  #   # needs: [Image-Scan]
+  #   needs: [Build-Push-Image]
+  #   #
+  #   #
+  #   #
+    # runs-on: ubuntu-latest
+    # permissions:
+    #   packages: write
+    # steps:
+    # - name: Login to GitHub Container Registery
+    #   uses: docker/login-action@v3
+    #   with:
+    #     registry: ${{ env.IMAGE_REGISTERY }}
+    #     username: ${{ github.actor }}
+    #     password: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Install Cosign
+    #   uses: sigstore/cosign-installer@v3.3.0
+    #   with:
+    #     cosign-release: 'v2.2.2'
+    # - name: Sign Image with Cosign
+    #   env:
+    #     COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+    #     COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+    #   run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    # - name: Verify that the Image has been signed Successfully
+    #   env:
+    #     COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+    #   run: |
+    #     docker buildx imagetools inspect ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    #     docker pull ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    #     cosign verify --key env://COSIGN_PUBLIC_KEY ${{ env.IMAGE_REGISTERY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
   
   Deploy-Image:
     #
     #
     # needs: [Sign-Image]
     needs: [Build-Push-Image]
-    #
-    #
-    #
+    # 
+    # 
     runs-on: ubuntu-latest
     permissions:
       contents: read

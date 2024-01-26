@@ -1,5 +1,6 @@
-cosign.pub
+kubernetes/pizza-service.yaml
+kubernetes/cosign.pub
+kubernetes/check-signed-images.yaml
 pre-commit
 report.txt
 coverage.out
-kubernetes/pizza-service.yaml
